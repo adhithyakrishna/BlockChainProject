@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.12;
+pragma solidity >=0.4.22 <=0.6.6;
 
 contract BettingLite {
     
@@ -9,6 +9,15 @@ contract BettingLite {
         uint256 points; 
     } 
     
+    enum Phase {INIT, BETTING, REVEAL, DONE}
+
+    Phase public currentPhase = Phase.INIT;
+    
+    event AuctionEnded(uint winningValue);
+    event BettingStarted();
+    event RevealStarted();
+    event BettingInit();
+
 	//All the participants are mapped to an address
     mapping ( address => participants) result; 
     enum Score {ZERO,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT}
@@ -16,6 +25,8 @@ contract BettingLite {
     Score score;
     uint256 minBet;
     address public owner;
+    bytes32 password;
+    bytes32 salt;
     
 	//modifier to be used only by the organiser
     modifier _ownerOnly() {
@@ -28,18 +39,39 @@ contract BettingLite {
         require(msg.sender != owner);
         _;
     }
+
+    function advancePhase() public _ownerOnly {
+        // If already in done phase, reset to init phase
+        if (currentPhase == Phase.DONE) {
+            currentPhase = Phase.INIT;
+        } else {
+            // else, increment the phase
+            // Conversion to uint needed as enums are internally uints
+            uint nextPhase = uint(currentPhase) + 1;
+            currentPhase = Phase(nextPhase);
+        }
+
+        // Emit appropriate events for the new phase
+        if (currentPhase == Phase.REVEAL) emit RevealStarted();
+        if (currentPhase == Phase.BETTING) emit BettingStarted();
+        if (currentPhase == Phase.INIT) emit BettingInit();
+    }
 	
 	//constructor initialises the betting values and points of the organizer by 100 for participation
-    constructor() public {
+    constructor(bytes32 _password, bytes32 _salt) public {
         owner = address(this);
         result[owner].bettingVal = 100;
         result[owner].points = 100;
         score = Score.ZERO;
+        currentPhase = Phase.INIT;
         minBet = 100;
+        salt = _salt;
+        password = keccak256(abi.encodePacked(_password, _salt));
     }
 
 	//the placebet function takes a nominal amount as wei for participation
     function placeBet() public payable _playerOnly returns (uint256) {
+        require(currentPhase == Phase.BETTING, "Invalid phase");
         require(msg.value > minBet , "should send more that 100 weis");
         buyTokens(msg.value);
         return result[msg.sender].bettingVal;
@@ -64,6 +96,7 @@ contract BettingLite {
 	//Takes two parameters which decides if the predicted value of the user is correct, he is either rewared or penalized based on this
     function predictWinning(uint256 prediction, uint256 actualValue) _playerOnly public {
         
+        require(currentPhase == Phase.BETTING, "Invalid phase");
         assert(result[msg.sender].points > 0);
         assert(actualValue >= uint256(Score.ZERO) && actualValue <= uint256(Score.EIGHT));
         assert(prediction >= uint256(Score.ZERO) && prediction <= uint256(Score.EIGHT));
@@ -93,7 +126,9 @@ contract BettingLite {
     }
     
 	// Winner is declared if the particpant's points are greater than what he has initially invested
-    function declareWinner() public view returns (bool) {
+    function declareWinner(bytes32 _password) public view returns (bool) {
+        require(currentPhase == Phase.REVEAL, "Invalid phase");
+        require(password == keccak256(abi.encodePacked(_password, salt)));
         if(result[msg.sender].points - result[msg.sender].bettingVal > 0) {
             return true;
         }
@@ -102,6 +137,7 @@ contract BettingLite {
     
 	//The final winning amount can be withdrawn by the player
     function withdraw() _playerOnly public {
+        require(currentPhase == Phase.DONE, "Invalid phase");
         require(result[msg.sender].points > 0,'You dont have any points to withdraw');
         uint256 profit = result[msg.sender].points - result[msg.sender].bettingVal; 
         result[msg.sender].points = 0;
