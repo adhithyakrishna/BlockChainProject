@@ -12,8 +12,8 @@ contract BettingLite
         bytes32 password;
     } 
     
-    enum Phase {INIT, BETTING, REVEAL, DONE}
-    enum Score {ZERO,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT}
+    enum Phase {INIT, BETTING, DONE}
+    enum Score {ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT}
     
     Phase public currentPhase = Phase.INIT;
     
@@ -25,17 +25,16 @@ contract BettingLite
     address owner;
     bytes32 salt;
     
-    event AuctionEnded(uint winningValue);
+    event Balances(uint playerBalance, uint arbitarBalance);
     event BettingStarted();
-    event RevealStarted();
-    event BettingInit();
-    
+    event BettingDone();
+
     //constructor initialises the betting values and points of the organizer by 100 for participation
     constructor(bytes32 _salt) public 
     {
         owner = msg.sender;
-        result[owner].bettingVal = 100;
-        result[owner].points = 100;
+        result[owner].bettingVal = 1000;
+        result[owner].points = 1000;
         score = Score.ZERO;
         currentPhase = Phase.INIT;
         minBet = 100;
@@ -56,46 +55,29 @@ contract BettingLite
         _;
     }
 
-    function incrementPhase() public _playerOnly 
-    {
-        if (currentPhase == Phase.DONE) 
-        {
-            currentPhase = Phase.INIT;
-        } 
-        else 
-        {
-            uint nextPhase = uint(currentPhase) + 1;
-            currentPhase = Phase(nextPhase);
-        }
-
-        if (currentPhase == Phase.REVEAL) 
-        {
-            emit RevealStarted();
-        }
-        if (currentPhase == Phase.BETTING) 
-        {
-            emit BettingStarted();
-        }
-        if (currentPhase == Phase.INIT) 
-        {
-            emit BettingInit();
-        }
+    modifier _ownerHasMoney() {
+        require(result[owner].points  > 0);
+        _;    
     }
 	
     function createPassword (string memory password) _playerOnly public returns (bool)
     {
+        require(currentPhase == Phase.INIT, "Invalid phase");
         require((result[msg.sender].password == 0x0000000000000000000000000000000000000000000000000000000000000000), "password already initialised");
+        currentPhase = Phase.BETTING;
         result[msg.sender].password = keccak256(abi.encodePacked(password, salt));
+        emit BettingStarted();
     }
     
 	//the placebet function takes a nominal amount as wei for participation
-    function placeBet(string memory password) public payable _playerOnly returns (uint256) 
+    function placeBet(string memory password) public payable _playerOnly _ownerHasMoney returns (uint256) 
     {
         require(result[msg.sender].password != 0x0000000000000000000000000000000000000000000000000000000000000000, "Initialise password first");
         require(result[msg.sender].password == keccak256(abi.encodePacked(password, salt)), "Wrong password");
         require(currentPhase == Phase.BETTING, "Invalid phase");
         require(msg.value > minBet , "should send more that 100 weis");
         buyTokens(msg.value);
+        emit Balances(result[msg.sender].points, result[owner].points);
         return result[msg.sender].bettingVal;
     }
     
@@ -119,7 +101,7 @@ contract BettingLite
     }
     
 	//Takes two parameters which decides if the predicted value of the user is correct, he is either rewared or penalized based on this
-    function predictWinning(uint256 prediction, uint256 actualValue) _playerOnly public 
+    function predictWinning(uint256 prediction, uint256 actualValue) _playerOnly _ownerHasMoney public 
     {
         require(currentPhase == Phase.BETTING, "Invalid phase");
         assert(result[msg.sender].points > 0);
@@ -152,28 +134,27 @@ contract BettingLite
             result[owner].points -= point * 10;
             result[msg.sender].points += point * 10;
         }
-    }
-    
-	// Winner is declared if the particpant's points are greater than what he has initially invested
-    function declareWinner() public view returns (bool) 
-    {
-        require(currentPhase == Phase.REVEAL, "Invalid phase");
-        if(result[msg.sender].points - result[msg.sender].bettingVal > 0) 
-        {
-            return true;
-        }
-        return false;
+
+        emit Balances(result[msg.sender].points, result[owner].points);
     }
     
 	//The final winning amount can be withdrawn by the player
-    function withdraw(string memory password) _playerOnly public 
+    function withdraw(string memory password) _playerOnly _ownerHasMoney public 
     {
-        require(currentPhase == Phase.DONE, "Invalid phase");
+        require(currentPhase == Phase.BETTING, "Invalid phase");
         require(result[msg.sender].password == keccak256(abi.encodePacked(password, salt)), "Wrong password");
         require(result[msg.sender].points > 0,'You dont have any points to withdraw');
         uint256 profit = result[msg.sender].points - result[msg.sender].bettingVal; 
         result[msg.sender].points = 0;
         result[msg.sender].bettingVal = 0;
         payable(msg.sender).transfer(profit);
+        emit Balances(result[msg.sender].points, result[owner].points);
+        currentPhase = Phase.DONE;
+    }
+
+    function closeBetting() public _playerOnly {
+        require(currentPhase == Phase.DONE, "Invalid phase");
+        selfdestruct(msg.sender);
+        emit BettingDone();
     }
 }
