@@ -1,0 +1,20 @@
+{
+  "name": "bettinglite-app",
+  "version": "1.0.0",
+  "description": "Betting blockchain project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Block",
+    "chain",
+    "Betting",
+    "application"
+  ],
+  "author": "Adhithyakrishna Kovai Srinivasan",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

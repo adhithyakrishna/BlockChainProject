@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cricket Betting Application</title>
+</head>
+
+<body>
+
+    <div class="text-center" > <p><b>Current account: </b><span id="current_account"></span></p>
+        
+    <div class="password">
+        <label class="subs-password">
+            <b>Enter Password: </b>&nbsp;
+              <input type="password" class="input-password" placeholder="Enter your password"></input>
+              <button type="submit" class="create-password">Submit</button>
+            <br/>
+            <br>
+        </label>        
+    </div>
+
+    <div class="scores">
+        <div class ="player-score">0</div>  
+        <div class ="arbitar-score">0</div>  
+    </div>
+
+
+    <div class="betting">
+        <input type="text" class="betting-number" placeholder="Enter your betting value"></input>
+        <input type="password" class="betting-password" placeholder="Enter your password"></input>
+        <button type="placeBet" class="betting-placeBet">placeBet</button>
+    </div>
+
+    <div class="withdraw">
+        <button type="submit" class="withdraw-amount">Withdraw</button>
+    </div>
+
+    <div class="CloseBetting">
+        <button type="withdraw" class="withdraw-amount">Close Betting</button>
+    </div>
+
+    <script src="js/dist/jquery.min.js"></script>
+    <script src="js/dist/web3.min.js"></script>
+    <script src="js/dist/truffle-contract.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+    

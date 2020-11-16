@@ -25,8 +25,8 @@ contract BettingLite
     address owner;
     bytes32 salt;
     
-    event Balances(uint playerBalance, uint arbitarBalance);
-    event BettingStarted();
+    event Balances(uint arbitarBalance, uint playerBalance);
+    event BettingStarted(int value);
     event BettingDone();
 
     //constructor initialises the betting values and points of the organizer by 100 for participation
@@ -59,6 +59,10 @@ contract BettingLite
         require(result[owner].points  > 0);
         _;    
     }
+
+    function getOwnerAddress() public view returns (address) {
+        return owner;
+    }
 	
     function createPassword (string memory password) _playerOnly public returns (bool)
     {
@@ -66,7 +70,7 @@ contract BettingLite
         require((result[msg.sender].password == 0x0000000000000000000000000000000000000000000000000000000000000000), "password already initialised");
         currentPhase = Phase.BETTING;
         result[msg.sender].password = keccak256(abi.encodePacked(password, salt));
-        emit BettingStarted();
+        emit BettingStarted(0);
     }
     
 	//the placebet function takes a nominal amount as wei for participation
@@ -88,15 +92,9 @@ contract BettingLite
     }
 
 	// At any time both the players and the arbitar can check arbitar's points
-    function getArbitarBalance() view public returns (uint256) 
+    function getBalances() public 
     {
-        return result[owner].points;
-    }
-    
-	//At any time both the player and arbitar can check the player's points
-    function getPlayerBalance() view public returns (uint256) 
-    {
-        return result[msg.sender].points;
+        emit Balances(result[owner].points, result[msg.sender].points);
     }
     
 	//Takes two parameters which decides if the predicted value of the user is correct, he is either rewared or penalized based on this
