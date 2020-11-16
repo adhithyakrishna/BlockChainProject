@@ -72,7 +72,6 @@ contract BettingLite
 	//the placebet function takes a nominal amount as wei for participation
     function placeBet(string memory password) public payable _playerOnly _ownerHasMoney returns (uint256) 
     {
-        require(result[msg.sender].password != 0x0000000000000000000000000000000000000000000000000000000000000000, "Initialise password first");
         require(result[msg.sender].password == keccak256(abi.encodePacked(password, salt)), "Wrong password");
         require(currentPhase == Phase.BETTING, "Invalid phase");
         require(msg.value > minBet , "should send more that 100 weis");
@@ -148,8 +147,8 @@ contract BettingLite
         result[msg.sender].points = 0;
         result[msg.sender].bettingVal = 0;
         payable(msg.sender).transfer(profit);
-        emit Balances(result[msg.sender].points, result[owner].points);
         currentPhase = Phase.DONE;
+        emit Balances(result[msg.sender].points, result[owner].points);
     }
 
     function closeBetting() public _playerOnly {
