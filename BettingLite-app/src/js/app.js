@@ -165,7 +165,7 @@ App = {
                         var bettingInstance;
                         App.contracts.bet.deployed().then(function (instance) {
                             bettingInstance = instance;
-                            return bettingInstance.settled();
+                            return bettingInstance.settleUp();
                         }).then(function (res) {
                             var returnVal = res.logs[0].args.msg;
                             App.currentPhase = returnVal;
@@ -179,11 +179,11 @@ App = {
     },
 
     withdrawAmount: function () {
-        // var pwd = $(".withdraw-password")[0].value;
+        var pwd = $(".withdraw-password")[0].value;
         var bettingInstance;
         App.contracts.bet.deployed().then(function (instance) {
             bettingInstance = instance;
-            return bettingInstance.withdraw();
+            return bettingInstance.withdraw(pwd);
         }).then(function (res) {
             if (res) {
                 var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
