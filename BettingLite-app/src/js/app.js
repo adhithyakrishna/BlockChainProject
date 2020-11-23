@@ -124,13 +124,15 @@ App = {
     },
 
     calculateBalance: function () {
-        var bettingInstance;
-        App.contracts.bet.deployed().then(function (instance) {
-            bettingInstance = instance;
-            return bettingInstance.getPending();
-        }).then(function (res) {
-            App.balanceToPayUp = res.logs[0].args.amount.toNumber();
-        });
+        if (App.balanceToPayUp <= 0) {
+            var bettingInstance;
+            App.contracts.bet.deployed().then(function (instance) {
+                bettingInstance = instance;
+                return bettingInstance.getPending();
+            }).then(function (res) {
+                App.balanceToPayUp = res.logs[0].args.amount.toNumber();
+            });
+        }
     },
     betting: function () {
         var val = $(".betting-value")[0].value;
@@ -177,14 +179,12 @@ App = {
     },
 
     prediction: function () {
-        if (!App.sentBack) {
+        if (!App.sentBack && App.currentPhase == "betting") {
             App.sentBack = true;
             var bettingInstance;
             App.contracts.bet.deployed().then(function (instance) {
                 var val1 = App.generatedValue;
                 var val2 = App.predictedValue;
-                //
-                val1 != val2;
                 bettingInstance = instance;
                 return bettingInstance.predictWinning(val1, val2);
             }).then(function (res) {
@@ -304,6 +304,7 @@ App = {
         }
     },
     initialiseBetting: function () {
+        clearInterval(App.tickTickTimer);
         App.timeleft = 15;
         App.sentBack = false;
         App.removeSelected();
@@ -336,7 +337,6 @@ App = {
             if (App.timeleft <= 0) {
                 clearInterval(App.tickTickTimer);
                 if (!App.sentBack) {
-                    App.sentBack = true;
                     App.prediction();
                 }
             }
