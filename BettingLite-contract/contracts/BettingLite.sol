@@ -28,11 +28,12 @@ contract BettingLite
     
     event Balances(uint arbitarBalance, uint bettingValue, uint playerBalance, uint phase);
     event BalancesWithMsg(uint arbitarBalance, uint bettingValue, uint playerBalance, string msg , uint256 value, uint phase);
-    event Message (string val, string message);
-    event afterPrediction(string result, uint winValue);
-    event investingStarted(uint phase);
+    event Message(string val, string message);
+    event InvestingStarted(uint phase);
     event BettingStarted(uint phase);
     event BettingDone(uint phase);
+    event CurrentPhase(uint phase);
+    event OwnerInfo(address ownerAccount, address ownerAddress);
 
     //constructor initialises the betting values and points of the organizer by 100 for participation
     constructor(bytes32 _salt, address payable recipientAddress) public payable
@@ -80,12 +81,13 @@ contract BettingLite
         require((result[msg.sender].password == 0x0000000000000000000000000000000000000000000000000000000000000000), "password already initialised");
         currentPhase = Phase.INVEST;
         result[msg.sender].password = keccak256(abi.encodePacked(password, salt));
-        emit investingStarted(uint(currentPhase));
+        emit InvestingStarted(uint(currentPhase));
     }
 
     //Step 2 Enter the betting value, returns balances of both players along with the betting value
     function bettingValue(uint val) public {
         require(val >= 10, "Betting value should be atleast 10");
+        require(val < address(this).balance, "Betting value should be less than the betting value");
         require(currentPhase == Phase.INVEST, "Invalid phase");
         val = val * 1000000000000000000;
         result[msg.sender].bettingAmount += val;
@@ -97,6 +99,7 @@ contract BettingLite
     function predictWinning(uint256 prediction, uint256 actualValue) _playerOnly _ownerHasMoney public 
     {
         require(currentPhase == Phase.BETTING, "Invalid phase");
+        require(address(this).balance > 0, "Owner has no money");
         assert(result[msg.sender].bettingAmount > 0);
         assert(actualValue >= uint256(Score.ZERO) && actualValue <= uint256(Score.EIGHT));
         assert(prediction >= uint256(Score.ZERO) && prediction <= uint256(Score.EIGHT));
@@ -135,30 +138,32 @@ contract BettingLite
     //Step 4 after paying it, we move on to betting phase again
     function settleUp() public {
         currentPhase = Phase.BETTING;
-        emit BettingStarted(uint(currentPhase));
+        emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
     }
 
     //Step 5 final winning amount can be withdrawn by the player
     function withdraw(string memory password) _playerOnly _ownerHasMoney public 
     {
+        require(result[msg.sender].password == keccak256(abi.encodePacked(password, salt)),"invalid password");
         require(currentPhase == Phase.BETTING, "Invalid phase");
         require(result[msg.sender].bettingAmount > 0, "You dont have any winning");
-        if(verifyPassword(password))
-        {
-            msg.sender.transfer(result[msg.sender].bettingAmount);
-            result[msg.sender].bettingAmount = 0;
-            currentPhase = Phase.DONE;
-            emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
+        uint amount = 0;
+        if(result[msg.sender].bettingAmount > address(this).balance) {
+            amount = address(this).balance;
         }
         else {
-            emit Message("Negative","Invalid password");
+            amount = result[msg.sender].bettingAmount;
         }
+        msg.sender.transfer(result[msg.sender].bettingAmount);
+        result[msg.sender].bettingAmount = 0;
+        currentPhase = Phase.DONE;
+        emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
     }
 	
     //Step 6 retry the betting
     function retry() _playerOnly public {
         require(currentPhase == Phase.DONE, "Invalid phase");
-        currentPhase = Phase.BETTING;
+        currentPhase = Phase.INVEST;
         emit BettingStarted(uint(currentPhase));
     }
 
@@ -174,20 +179,7 @@ contract BettingLite
         emit Balances(address(this).balance, result[msg.sender].bettingAmount ,msg.sender.balance, uint(currentPhase));
     }
 
-    function verifyPassword (string memory password) _playerOnly view public returns (bool)
-    {
-        require(currentPhase == Phase.BETTING, "Invalid phase");
-        return result[msg.sender].password == keccak256(abi.encodePacked(password, salt));
-    }
-    
-	//the placebet function takes a nominal amount as wei for participation
-    function placeBet(string memory password) public payable _playerOnly returns (uint) 
-    {
-        require(result[msg.sender].password == keccak256(abi.encodePacked(password, salt)), "Wrong password");
-        require(currentPhase == Phase.BETTING, "Invalid phase");
-        require(msg.value > minBet , "should send more that 100 weis");
-        // buyTokens(msg.value);
-        emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
-        return msg.sender.balance;
+    function getOwnerAddress() public returns (address) {
+        emit OwnerInfo(owner, beneficiary);
     }
 }

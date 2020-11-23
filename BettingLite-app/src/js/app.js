@@ -2,10 +2,18 @@ App = {
     web3Provider: null,
     contracts: {},
     url: 'http://127.0.0.1:7545',
-    arbitarAccount: null,
+    ownerAccount: null,
+    ownerAddress: null,
     playerAccount: null,
     balanceToPayUp: 0,
     currentPhase: "init",
+    phase: {
+        0: "init",
+        1: "invest",
+        2: "betting",
+        3: "payup",
+        4: "done"
+    },
     init: function () {
         return App.initWeb3();
     },
@@ -19,18 +27,6 @@ App = {
         web3 = new Web3(App.web3Provider);
         ethereum.enable();
         App.initContract();
-        // App.populateAddress();
-    },
-
-    populateAddress: function () {
-        new Web3(new Web3.providers.HttpProvider(App.url)).eth.getAccounts((err, accounts) => {
-            jQuery.each(accounts, function (i) {
-                if (web3.eth.coinbase != accounts[i]) {
-                    var optionElement = '<option value="' + accounts[i] + '">' + accounts[i] + '</option';
-                    jQuery('#enter_address').append(optionElement);
-                }
-            });
-        });
     },
 
     getBalances: function () {
@@ -44,11 +40,13 @@ App = {
             var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
             var bettingValue = res.logs[0].args.bettingValue.toNumber();
             var playerBalance = res.logs[0].args.playerBalance.toNumber();
+            App.currentPhase = App.phase[res.logs[0].args.phase.toNumber()];
             $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
             $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
             $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
-
+            jQuery('#current_phase').text(App.currentPhase);
             console.log(arbitarBalance, bettingValue, playerBalance);
+            App.displayCurrentPhase();
         })
     },
 
@@ -74,6 +72,17 @@ App = {
         $(document).on('click', '.prediction-placeBet', App.prediction);
         $(document).on('click', '.close-betting', App.closeBetting);
         $(document).on('click', '.prediction-payUp', App.payUp);
+
+        window.ethereum.on('accountsChanged', function () {
+            App.authoriseAccount();
+        });
+    },
+
+    displayCurrentPhase: function () {
+        for (var key of Object.keys(App.phase)) {
+            $("." + App.phase[key]).hide();
+            $("." + App.currentPhase).show();
+        }
     },
 
     initialiseOwnerAddress: function () {
@@ -82,7 +91,9 @@ App = {
             bettingInstance = instance;
             return bettingInstance.getOwnerAddress();
         }).then(function (res) {
-            App.ownerAccount = res;
+            App.ownerAccount = res.logs[0].args.ownerAccount;
+            App.ownerAddress = res.logs[0].args.ownerAddress;
+
         });
     },
 
@@ -92,7 +103,10 @@ App = {
             bettingInstance = instance;
             return bettingInstance.retry();
         }).then(function (res) {
-            console.log("shifted them");
+            var phaseValue = res.logs[0].args.phase.toNumber();
+            App.currentPhase = App.phase[phaseValue];
+            jQuery('#current_phase').text(App.currentPhase);
+            App.displayCurrentPhase();
         });
     },
 
@@ -110,6 +124,9 @@ App = {
             var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
             var bettingValue = res.logs[0].args.bettingValue.toNumber();
             var playerBalance = res.logs[0].args.playerBalance.toNumber();
+            var phaseValue = res.logs[0].args.phase.toNumber();
+
+            App.currentPhase = App.phase[phaseValue];
             var msg = res.logs[0].args.msg;
             var value = res.logs[0].args.value.toNumber();
             $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
@@ -117,11 +134,12 @@ App = {
             $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
 
             if (msg == "negative") {
-                App.currentPhase = "Payup";
                 App.balanceToPayUp = value;
             }
 
+            jQuery('#current_phase').text(App.currentPhase);
             console.log(msg + " " + value);
+            App.displayCurrentPhase();
         });
     },
 
@@ -142,9 +160,13 @@ App = {
                             var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
                             var bettingValue = res.logs[0].args.bettingValue.toNumber();
                             var playerBalance = res.logs[0].args.playerBalance.toNumber();
+                            var phaseValue = res.logs[0].args.phase.toNumber();
+                            App.currentPhase = App.phase[phaseValue];
                             $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
                             $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
                             $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+                            jQuery('#current_phase').text(App.currentPhase);
+                            App.displayCurrentPhase();
                         }).catch((err) => {
                             console.log("Error in verifying password" + err);
                         });
@@ -154,7 +176,7 @@ App = {
     },
 
     payUp: function () {
-        web3.eth.getAccounts(function (error, result) {
+        web3.eth.getAccounts(function () {
             web3.eth.sendTransaction(
                 {
                     from: App.playerAccount,
@@ -167,8 +189,17 @@ App = {
                             bettingInstance = instance;
                             return bettingInstance.settleUp();
                         }).then(function (res) {
-                            var returnVal = res.logs[0].args.msg;
-                            App.currentPhase = returnVal;
+                            var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
+                            var bettingValue = res.logs[0].args.bettingValue.toNumber();
+                            var playerBalance = res.logs[0].args.playerBalance.toNumber();
+                            var phaseValue = res.logs[0].args.phase.toNumber();
+                            $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
+                            $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
+                            $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+
+                            App.currentPhase = App.phase[phaseValue];
+                            jQuery('#current_phase').text(App.currentPhase);
+                            App.displayCurrentPhase();
                             App.balanceToPayUp = 0;
                         }).catch((err) => {
                             console.log("Error in verifying password" + err);
@@ -176,22 +207,29 @@ App = {
                     }
                 });
         });
+        App.displayCurrentPhase();
     },
 
     withdrawAmount: function () {
-        var pwd = $(".withdraw-password")[0].value;
         var bettingInstance;
+        var pwd;
         App.contracts.bet.deployed().then(function (instance) {
+            pwd = $(".withdraw-password")[0].value;
             bettingInstance = instance;
+
             return bettingInstance.withdraw(pwd);
         }).then(function (res) {
             if (res) {
                 var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
                 var bettingValue = res.logs[0].args.bettingValue.toNumber();
                 var playerBalance = res.logs[0].args.playerBalance.toNumber();
+                var phaseValue = res.logs[0].args.phase.toNumber();
                 $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
                 $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
                 $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+                App.currentPhase = App.phase[phaseValue];
+                jQuery('#current_phase').text(App.currentPhase);
+                App.displayCurrentPhase();
             } else {
                 console.log("wrong password");
             }
@@ -213,8 +251,10 @@ App = {
             bettingInstance = instance;
             return bettingInstance.createPassword(password);
         }).then(function (res) {
-            var returnVal = res.logs[0].args.msg;
-            App.currentPhase = returnVal;
+            var returnVal = res.logs[0].args.phase.toNumber();
+            App.currentPhase = App.phase[returnVal];
+            jQuery('#current_phase').text(App.currentPhase);
+            App.displayCurrentPhase();
         }).catch((err) => {
             console.log("Error in creating password" + err);
         });
@@ -226,8 +266,26 @@ App = {
             bettingInstance = instance;
             return bettingInstance.closeBetting();
         }).then(function (res) {
-            console.log("closed the betting !!");
+            var returnVal = res.logs[0].args.phase.toNumber();
+            App.currentPhase = App.phase[returnVal];
+            jQuery('#current_phase').text(App.currentPhase);
+            App.displayCurrentPhase();
         });
+    },
+
+    authoriseAccount: function () {
+        console.log("Triggered");
+        var accounts = web3.eth.accounts;
+        if (App.ownerAddress == accounts[0]) {
+            for (var key of Object.keys(App.phase)) {
+                $("." + App.phase[key]).hide();
+            }
+            $(".closeBetting").removeClass("ownerOnly");
+        }
+        else {
+            App.displayCurrentPhase();
+            $(".closeBetting").addClass("ownerOnly");
+        }
     }
 };
 
