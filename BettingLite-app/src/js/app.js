@@ -266,10 +266,7 @@ App = {
             bettingInstance = instance;
             return bettingInstance.closeBetting();
         }).then(function (res) {
-            var returnVal = res.logs[0].args.phase.toNumber();
-            App.currentPhase = App.phase[returnVal];
-            jQuery('#current_phase').text(App.currentPhase);
-            App.displayCurrentPhase();
+            jQuery('.scores').hide();
         });
     },
 
