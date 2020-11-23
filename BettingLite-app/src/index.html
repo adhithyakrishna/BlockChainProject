@@ -38,22 +38,58 @@
                 <button type="placeBet" class="betting-placeBet">placeBet</button>
             </div>
 
-            <div class="prediction betting">
-                <input type="text" class="prediction-value" placeholder="Enter your prediction"></input>
-                <input type="text" class="actual-value" placeholder="Enter your actual prediction"></input>
-                <div class="numberCircle">1</div>
-                <div class="numberCircle">2</div>
-                <div class="numberCircle">3</div>
-                <div class="numberCircle">4</div>
-                <div class="numberCircle">5</div>
-                <div class="numberCircle">6</div>
-                <div class="numberCircle">Wi</div>
-                <div class="numberCircle">W</div>
-                <button type="placeBet" class="prediction-placeBet">predict</button>
-            </div>
+            <div class="betting">
+                <div class="prediction">
+                    <div class="prediction-value numberCircle one">1</div>
+                    <div class="prediction-value numberCircle two">2</div>
+                    <div class="prediction-value numberCircle three">3</div>
+                    <div class="prediction-value numberCircle four">4</div>
+                    <div class="prediction-value numberCircle five">5</div>
+                    <div class="prediction-value numberCircle six">6</div>
+                    <div class="prediction-value numberCircle wide">Wi</div>
+                    <div class="prediction-value numberCircle wicket">W</div>
+                </div>
 
+                <div class="timer">
+                    <div class="countDownVal">
+                        <progress class="progress-bar" value="15" max="15" id="countDown"></progress>
+                        <p> Select a score within <span id="countDownText">15 </span> seconds and place bet</p>
+                    </div>
+                </div>
+
+                <div class="betting">
+                    <button class="prediction-placeBet">Place Bet</button>
+                </div>
+
+                <div class="playerScore">
+                    <div class="board playerValue">
+                        The result of the ball is
+                        <span class="playerSc">
+
+                        </span>
+                    </div>
+                </div>
+                <div class="billBoard">
+                    <div class="board winning">
+                        Congratulations, You won
+                        <span class="winAmount">
+
+                        </span>
+                        Ethers
+                    </div>
+                </div>
+            </div>
             <div class="settle payup">
+                <div class="board loosing">
+                    Sorry, You lost
+                    <span class="looseAmount">
+
+                    </span>
+                    Ethers. Please pay up to continue
+                </div>
+                
                 <button type="placeBet" class="prediction-payUp">Pay up</button>
+
             </div>
 
             <div class="withdraw betting">

@@ -1,3 +1,6 @@
+body{
+    font-size: 20px;
+}
 .ownerOnly {
     display : none;
 }
@@ -8,15 +11,55 @@
 }
 
 .numberCircle {
-    border-radius: 50%;
+    cursor: pointer;
+    margin: 0 10px;    
     width: 36px;
+    float: left;
     height: 36px;
     padding: 8px;
-
     background: #fff;
     border: 2px solid #666;
     color: #666;
     text-align: center;
-    float : left;
     font: 32px Arial, sans-serif;
+}
+
+.betting {
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 600px;
+}
+
+.board {
+    padding: 10px;
+    border: 1px solid black;
+    margin: 10px 0px;
+}
+
+.countDownVal, .betting {
+    text-align: center;
+}
+
+.prediction {
+    display: inline-block;
+    overflow: hidden;
+}
+
+.countDownVal {
+    margin: 10px 10px;
+}
+
+.winning {
+    background-color: aquamarine;
+}
+
+.loosing {
+    background-color: rgb(228, 105, 105);
+}
+
+.betting {
+    text-align: center;
 }

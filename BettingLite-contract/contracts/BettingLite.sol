@@ -9,6 +9,7 @@ contract BettingLite
     { 
         bytes32 password;
         uint bettingAmount;
+        uint pendingAmount;
     } 
     
     enum Phase {INIT, INVEST, BETTING, PAYUP, DONE}
@@ -34,6 +35,7 @@ contract BettingLite
     event BettingDone(uint phase);
     event CurrentPhase(uint phase);
     event OwnerInfo(address ownerAccount, address ownerAddress);
+    event Pending(uint amount);
 
     //constructor initialises the betting values and points of the organizer by 100 for participation
     constructor(bytes32 _salt, address payable recipientAddress) public payable
@@ -85,11 +87,23 @@ contract BettingLite
     }
 
     //Step 2 Enter the betting value, returns balances of both players along with the betting value
-    function bettingValue(uint val) public {
+    /*function bettingValue(uint val) public {
         require(val >= 10, "Betting value should be atleast 10");
         require(val < address(this).balance, "Betting value should be less than the betting value");
         require(currentPhase == Phase.INVEST, "Invalid phase");
         val = val * 1000000000000000000;
+        result[msg.sender].bettingAmount += val;
+        currentPhase = Phase.BETTING;
+        emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
+    }*/
+
+    //Step 2 Enter the betting value, returns balances of both players along with the betting value
+    function betting() public payable {
+        require(msg.value >= 10, "Betting value should be atleast 10");
+        require(msg.value < address(this).balance, "Betting value should be less than the betting value");
+        require(currentPhase == Phase.INVEST, "Invalid phase");
+        uint val = msg.value;
+        beneficiary.transfer(msg.value);
         result[msg.sender].bettingAmount += val;
         currentPhase = Phase.BETTING;
         emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
@@ -125,7 +139,11 @@ contract BettingLite
         {
             currentPhase = Phase.PAYUP;
             result[msg.sender].bettingAmount -= point * 1000000000000000000; 
+            if(result[msg.sender].bettingAmount <= 0) {
+                currentPhase = Phase.INVEST;
+            }
             value = point;
+            result[msg.sender].pendingAmount = value;
             emit BalancesWithMsg(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance,"negative", value, uint(currentPhase));
         }
         else {
@@ -136,8 +154,9 @@ contract BettingLite
     }
 
     //Step 4 after paying it, we move on to betting phase again
-    function settleUp() public {
+    function settleUp() public payable {
         currentPhase = Phase.BETTING;
+        result[msg.sender].pendingAmount = 0;
         emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
     }
 
@@ -169,14 +188,16 @@ contract BettingLite
 
     //Step 7 when the betting is finished
     function closeBetting() public _playerOnly {
-        require(currentPhase == Phase.DONE, "Invalid phase");
         selfdestruct(msg.sender);
-        emit BettingDone(uint(currentPhase));
     }
 
     //Anscillary functions
     function getBalances() public {
         emit Balances(address(this).balance, result[msg.sender].bettingAmount ,msg.sender.balance, uint(currentPhase));
+    }
+
+    function getPending() public {
+        emit Pending(result[msg.sender].pendingAmount);
     }
 
     function getOwnerAddress() public returns (address) {
