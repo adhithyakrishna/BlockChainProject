@@ -36,6 +36,7 @@ body {
 .betting {
     box-sizing: border-box;
     overflow: hidden;
+    margin: 20px 0;
 }
 
 .progress-bar {
@@ -120,8 +121,9 @@ button {
 }
 
 .left {
-    float : left;
+    float: left;
 }
+
 button:hover {
     background-image: linear-gradient( 145deg, transparent 10%, var(--dark) 10% 20%, transparent 20% 30%, var(--dark) 30% 40%, transparent 40% 50%, var(--dark) 50% 60%, transparent 60% 70%, var(--dark) 70% 80%, transparent 80% 90%, var(--dark) 90% 100%);
     animation: background 3s linear infinite;
@@ -148,11 +150,12 @@ input {
     margin: 0 10px;
 }
 
-.input-password{
+.input-password {
     height: 40px;
     float: left;
     width: 378px;
 }
+
 .subs-password {
     box-sizing: border-box;
     overflow: hidden;
@@ -160,8 +163,23 @@ input {
 
 .passwordHolder, .withdrawHolder, .bettingHolder {
     box-sizing: border-box;
-    overflow: hidden;    
+    overflow: hidden;
     display: inline-block;
     margin: 0 auto;
     margin: 25px 0;
+}
+
+.hint {
+    text-align: center;
+    display: block;
+    margin: 20px 31px;
+}
+
+.validation {
+    text-align: center;
+    color: red;
+}
+
+.retry {
+    margin: 20px 0;
 }

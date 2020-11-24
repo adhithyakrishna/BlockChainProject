@@ -95,7 +95,7 @@ App = {
         $(document).on('click', '.betting-placeBet', App.betting);
         $(document).on('click', '.withdraw-amount', App.withdrawAmount);
         $(document).on('click', '.retry-game', App.retryGame);
-        $(document).on('click', '.prediction-placeBet', App.prediction);
+        $(document).on('click', '.prediction-placeBet', App.bettingInit);
         $(document).on('click', '.close-betting', App.closeBetting);
         $(document).on('click', '.prediction-payUp', App.payUp);
         $(document).on('click', '.numberCircle', App.selectScore);
@@ -116,6 +116,7 @@ App = {
         else if (App.currentPhase == "payup") {
             App.calculateBalance();
         }
+        $(".validation").text("");
     },
 
     calculateBalance: function () {
@@ -131,22 +132,27 @@ App = {
     },
     betting: function () {
         var val = $(".betting-value")[0].value;
-        var bettingInstance;
-        App.contracts.bet.deployed().then(function (instance) {
-            bettingInstance = instance;
-            return bettingInstance.betting({ value: web3.toWei(val, "ether") });
-        }).then(function (res) {
-            var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
-            var bettingValue = res.logs[0].args.bettingValue.toNumber();
-            var playerBalance = res.logs[0].args.playerBalance.toNumber();
-            var phaseValue = res.logs[0].args.phase.toNumber();
-            App.currentPhase = App.phase[phaseValue];
-            $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
-            $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
-            $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
-            jQuery('#current_phase').text(App.currentPhase);
-            App.displayCurrentPhase();
-        });
+        var isNumber = $.isNumeric(val);
+        if (isNumber && val >= 10 && val <= 80) {
+            var bettingInstance;
+            App.contracts.bet.deployed().then(function (instance) {
+                bettingInstance = instance;
+                return bettingInstance.betting({ value: web3.toWei(val, "ether") });
+            }).then(function (res) {
+                var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
+                var bettingValue = res.logs[0].args.bettingValue.toNumber();
+                var playerBalance = res.logs[0].args.playerBalance.toNumber();
+                var phaseValue = res.logs[0].args.phase.toNumber();
+                App.currentPhase = App.phase[phaseValue];
+                $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
+                $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
+                $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+                jQuery('#current_phase').text(App.currentPhase);
+                App.displayCurrentPhase();
+            });
+        } else {
+            $(".validation").text("Enter a valid ether value greater than 10 and less than 80");
+        }
     },
     initialiseOwnerAddress: function () {
         var bettingInstance;
@@ -172,14 +178,18 @@ App = {
             App.displayCurrentPhase();
         });
     },
-
+    bettingInit: function () {
+        App.playerScore(App.prediction);
+    },
     prediction: function () {
         if (!App.sentBack && App.currentPhase == "betting") {
+            App.showScoreHide();
             App.sentBack = true;
             var bettingInstance;
             App.contracts.bet.deployed().then(function (instance) {
                 var val1 = App.generatedValue;
                 var val2 = App.predictedValue;
+
                 bettingInstance = instance;
                 return bettingInstance.predictWinning(val1, val2);
             }).then(function (res) {
@@ -254,7 +264,7 @@ App = {
                 console.log("wrong password");
             }
         }).catch((err) => {
-            console.log("Error in verifying password" + err);
+            $(".validation").text("Invalid password");
         });
     },
     createPassword: function () {
@@ -345,6 +355,7 @@ App = {
         min = Math.ceil(1);
         max = Math.floor(8);
         App.generatedValue = Math.floor(Math.random() * (max - min + 1)) + min;
+        console.log(App.generatedValue);
         $(".playerSc").text(App.generatedValue);
         callback();
     },
