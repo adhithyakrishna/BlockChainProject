@@ -115,6 +115,7 @@ App = {
             var bettingValue = res.logs[0].args.bettingValue.toNumber();
             var playerBalance = res.logs[0].args.playerBalance.toNumber();
             App.currentPhase = App.phase[res.logs[0].args.phase.toNumber()];
+            App.balanceToPayUp = res.logs[0].args.payBalance.toNumber();
             $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
             $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
             $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
@@ -130,25 +131,10 @@ App = {
             $("." + App.phase[key]).hide();
             $("." + App.currentPhase).show();
         }
-
         if (App.currentPhase == "betting") {
             App.initialiseBetting();
         }
-        else if (App.currentPhase == "payup") {
-            App.calculateBalance();
-        }
         $(".validation").text("");
-    },
-    calculateBalance: function () {
-        if (App.balanceToPayUp <= 0) {
-            var bettingInstance;
-            App.contracts.bet.deployed().then(function (instance) {
-                bettingInstance = instance;
-                return bettingInstance.getPending();
-            }).then(function (res) {
-                App.balanceToPayUp = res.logs[0].args.amount.toNumber();
-            });
-        }
     },
     betting: function () {
         var val = $(".betting-value")[0].value;
@@ -199,46 +185,46 @@ App = {
         });
     },
     bettingInit: function () {
-        App.playerScore(App.prediction);
+        if (!App.sentBack && App.currentPhase == "betting") {
+            App.playerScore(App.prediction);
+        }
     },
     prediction: function () {
-        if (!App.sentBack && App.currentPhase == "betting") {
-            App.showScoreHide();
-            App.sentBack = true;
-            var bettingInstance;
-            App.contracts.bet.deployed().then(function (instance) {
-                var val1 = App.generatedValue;
-                var val2 = App.predictedValue;
+        App.showScoreHide();
+        App.sentBack = true;
+        var bettingInstance;
+        App.contracts.bet.deployed().then(function (instance) {
+            var val1 = App.generatedValue;
+            var val2 = App.predictedValue;
 
-                bettingInstance = instance;
-                return bettingInstance.predictWinning(val1, val2);
-            }).then(function (res) {
-                var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
-                var bettingValue = res.logs[0].args.bettingValue.toNumber();
-                var playerBalance = res.logs[0].args.playerBalance.toNumber();
-                var phaseValue = res.logs[0].args.phase.toNumber();
+            bettingInstance = instance;
+            return bettingInstance.predictWinning(val1, val2);
+        }).then(function (res) {
+            var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
+            var bettingValue = res.logs[0].args.bettingValue.toNumber();
+            var playerBalance = res.logs[0].args.playerBalance.toNumber();
+            var phaseValue = res.logs[0].args.phase.toNumber();
 
-                App.currentPhase = App.phase[phaseValue];
-                var msg = res.logs[0].args.msg;
-                var value = res.logs[0].args.value.toNumber();
-                $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
-                $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
-                $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+            App.currentPhase = App.phase[phaseValue];
+            var msg = res.logs[0].args.msg;
+            var value = res.logs[0].args.value.toNumber();
+            $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
+            $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
+            $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
 
-                if (msg == "negative") {
-                    App.balanceToPayUp = value;
-                    $(".looseAmount").text(App.balanceToPayUp);
-                    $(".loosing").show();
-                } else {
-                    $(".winAmount").text(value);
-                    $(".winning").show();
-                }
-                jQuery('#current_phase').text(App.currentPhase);
-                setTimeout(function () {   //calls click event after a certain time
-                    App.displayCurrentPhase();
-                }, 2000);
-            });
-        }
+            if (msg == "negative") {
+                App.balanceToPayUp = value;
+                $(".looseAmount").text(App.balanceToPayUp);
+                $(".loosing").show();
+            } else {
+                $(".winAmount").text(value);
+                $(".winning").show();
+            }
+            jQuery('#current_phase').text(App.currentPhase);
+            setTimeout(function () {   //calls click event after a certain time
+                App.displayCurrentPhase();
+            }, 2000);
+        });
     },
     payUp: function () {
         var bettingInstance;
@@ -362,7 +348,7 @@ App = {
             if (App.timeleft <= 0) {
                 clearInterval(App.tickTickTimer);
                 if (!App.sentBack) {
-                    App.prediction();
+                    App.bettingInit();
                 }
             }
         }, 1000);

@@ -36,7 +36,7 @@ contract BettingLite
     event CurrentPhase(uint phase);
     event OwnerInfo(address ownerAccount, address ownerAddress);
     event Pending(uint amount);
-    event initialiseContract(address ownerAccount, address ownerAddress, uint arbitarBalance, uint bettingValue, uint playerBalance, uint phase);
+    event initialiseContract(address ownerAccount, address ownerAddress, uint arbitarBalance, uint bettingValue, uint playerBalance, uint phase, uint payBalance);
 
     //constructor initialises the betting values and points of the organizer by 100 for participation
     constructor(bytes32 _salt, address payable recipientAddress) public payable
@@ -104,7 +104,7 @@ contract BettingLite
         require(msg.value < address(this).balance, "Betting value should be less than the betting value");
         require(currentPhase == Phase.INVEST, "Invalid phase");
         uint val = msg.value;
-        beneficiary.transfer(msg.value);
+        owner.transfer(msg.value);
         result[msg.sender].bettingAmount += val;
         currentPhase = Phase.BETTING;
         emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
@@ -174,7 +174,7 @@ contract BettingLite
         else {
             amount = result[msg.sender].bettingAmount;
         }
-        msg.sender.transfer(result[msg.sender].bettingAmount);
+        msg.sender.transfer(amount);
         result[msg.sender].bettingAmount = 0;
         currentPhase = Phase.DONE;
         emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
@@ -206,6 +206,6 @@ contract BettingLite
     // }
 
     function initialiseAll() public {
-        emit initialiseContract(owner, beneficiary, address(this).balance, result[msg.sender].bettingAmount ,msg.sender.balance, uint(currentPhase));
+        emit initialiseContract(owner, beneficiary, address(this).balance, result[msg.sender].bettingAmount ,msg.sender.balance, uint(currentPhase), result[msg.sender].pendingAmount);
     }
 }

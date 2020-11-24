@@ -1,7 +1,7 @@
 body {
     font-size: 24px;
     font-weight: bold;
-    background-image: url('../img/ground.jpeg');
+    background-image: url('../images/ground.jpeg');
     background-color: rgba(255, 255, 255, 0.6);
     background-blend-mode: lighten;
 }
@@ -15,7 +15,7 @@ body {
     color: white !important;
 }
 
-.accountDetails, .bettingAmount {
+.accountDetails, .bettingAmount, .loosing, .winning {
     text-align: center;
 }
 
