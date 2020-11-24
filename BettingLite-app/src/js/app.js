@@ -54,7 +54,7 @@ App = {
         ethereum.enable();
         App.initContract();
     },
-
+    /*
     getBalances: function () {
         var arbitarBalance;
         var BettingInstance;
@@ -74,7 +74,7 @@ App = {
             console.log(arbitarBalance, bettingValue, playerBalance);
             App.displayCurrentPhase();
         })
-    },
+    },*/
 
     initContract: function () {
         $.getJSON('BettingLite.json', function (data) {
@@ -89,8 +89,7 @@ App = {
     },
 
     initFunctions: function () {
-        App.initialiseOwnerAddress();
-        App.getBalances();
+        App.initialiseAll();
         $(document).on('click', '.create-password', App.createPassword);
         $(document).on('click', '.betting-placeBet', App.betting);
         $(document).on('click', '.withdraw-amount', App.withdrawAmount);
@@ -101,6 +100,28 @@ App = {
         $(document).on('click', '.numberCircle', App.selectScore);
         window.ethereum.on('accountsChanged', function () {
             App.authoriseAccount();
+        });
+    },
+
+    initialiseAll: function () {
+        var bettingInstance;
+        App.contracts.bet.deployed().then(function (instance) {
+            bettingInstance = instance;
+            return bettingInstance.initialiseAll();
+        }).then(function (res) {
+            App.ownerAccount = res.logs[0].args.ownerAccount;
+            App.ownerAddress = res.logs[0].args.ownerAddress;
+            var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
+            var bettingValue = res.logs[0].args.bettingValue.toNumber();
+            var playerBalance = res.logs[0].args.playerBalance.toNumber();
+            App.currentPhase = App.phase[res.logs[0].args.phase.toNumber()];
+            $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
+            $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
+            $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
+
+            jQuery('#current_phase').text(App.currentPhase);
+            console.log(arbitarBalance, bettingValue, playerBalance);
+            App.displayCurrentPhase();
         });
     },
 
@@ -118,7 +139,6 @@ App = {
         }
         $(".validation").text("");
     },
-
     calculateBalance: function () {
         if (App.balanceToPayUp <= 0) {
             var bettingInstance;
@@ -349,7 +369,6 @@ App = {
     },
     showScoreHide: function () {
         $(".playerScore").show();
-        setTimeout(function () { $(".playerScore").hide(); }, 1500);
     },
     playerScore: function (callback) {
         min = Math.ceil(1);

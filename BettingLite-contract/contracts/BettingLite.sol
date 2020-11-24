@@ -36,6 +36,7 @@ contract BettingLite
     event CurrentPhase(uint phase);
     event OwnerInfo(address ownerAccount, address ownerAddress);
     event Pending(uint amount);
+    event initialiseContract(address ownerAccount, address ownerAddress, uint arbitarBalance, uint bettingValue, uint playerBalance, uint phase);
 
     //constructor initialises the betting values and points of the organizer by 100 for participation
     constructor(bytes32 _salt, address payable recipientAddress) public payable
@@ -200,7 +201,11 @@ contract BettingLite
         emit Pending(result[msg.sender].pendingAmount);
     }
 
-    function getOwnerAddress() public returns (address) {
-        emit OwnerInfo(owner, beneficiary);
+    // function getOwnerAddress() public returns (address) {
+    //     emit OwnerInfo(owner, beneficiary);
+    // }
+
+    function initialiseAll() public {
+        emit initialiseContract(owner, beneficiary, address(this).balance, result[msg.sender].bettingAmount ,msg.sender.balance, uint(currentPhase));
     }
 }
