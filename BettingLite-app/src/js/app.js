@@ -99,14 +99,9 @@ App = {
         $(document).on('click', '.close-betting', App.closeBetting);
         $(document).on('click', '.prediction-payUp', App.payUp);
         $(document).on('click', '.numberCircle', App.selectScore);
-        // $(document).on('click', '.placeBet', App.placeBetting);
         window.ethereum.on('accountsChanged', function () {
             App.authoriseAccount();
         });
-    },
-
-    selectScore: function () {
-        console.log("hello");
     },
 
     displayCurrentPhase: function () {
