@@ -86,18 +86,7 @@ contract BettingLite
         result[msg.sender].password = keccak256(abi.encodePacked(password, salt));
         emit InvestingStarted(uint(currentPhase));
     }
-
-    //Step 2 Enter the betting value, returns balances of both players along with the betting value
-    /*function bettingValue(uint val) public {
-        require(val >= 10, "Betting value should be atleast 10");
-        require(val < address(this).balance, "Betting value should be less than the betting value");
-        require(currentPhase == Phase.INVEST, "Invalid phase");
-        val = val * 1000000000000000000;
-        result[msg.sender].bettingAmount += val;
-        currentPhase = Phase.BETTING;
-        emit Balances(address(this).balance, result[msg.sender].bettingAmount, msg.sender.balance, uint(currentPhase));
-    }*/
-
+    
     //Step 2 Enter the betting value, returns balances of both players along with the betting value
     function betting() public payable {
         require(msg.value >= 10, "Betting value should be atleast 10");

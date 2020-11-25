@@ -43,7 +43,6 @@ App = {
     init: function () {
         return App.initWeb3();
     },
-
     initWeb3: function () {
         if (typeof web3 !== 'undefined') {
             App.web3Provider = web3.currentProvider;
@@ -54,28 +53,6 @@ App = {
         ethereum.enable();
         App.initContract();
     },
-    /*
-    getBalances: function () {
-        var arbitarBalance;
-        var BettingInstance;
-        App.contracts.bet.deployed().then(function (instance) {
-            BettingInstance = instance;
-            arbitarBalance = BettingInstance.getBalances();
-            return arbitarBalance;
-        }).then(function (res) {
-            var arbitarBalance = res.logs[0].args.arbitarBalance.toNumber();
-            var bettingValue = res.logs[0].args.bettingValue.toNumber();
-            var playerBalance = res.logs[0].args.playerBalance.toNumber();
-            App.currentPhase = App.phase[res.logs[0].args.phase.toNumber()];
-            $('.arbitar-score').text(web3.fromWei(arbitarBalance, 'ether'));
-            $('.betting-score').text(web3.fromWei(bettingValue, 'ether'));
-            $('.player-score').text(web3.fromWei(playerBalance, 'ether'));
-            jQuery('#current_phase').text(App.currentPhase);
-            console.log(arbitarBalance, bettingValue, playerBalance);
-            App.displayCurrentPhase();
-        })
-    },*/
-
     initContract: function () {
         $.getJSON('BettingLite.json', function (data) {
             var bettingArtifact = data;
@@ -87,7 +64,6 @@ App = {
             return App.initFunctions();
         });
     },
-
     initFunctions: function () {
         App.initialiseAll();
         $(document).on('click', '.create-password', App.createPassword);
@@ -102,7 +78,6 @@ App = {
             App.authoriseAccount();
         });
     },
-
     initialiseAll: function () {
         var bettingInstance;
         App.contracts.bet.deployed().then(function (instance) {
@@ -125,7 +100,6 @@ App = {
             App.displayCurrentPhase();
         });
     },
-
     displayCurrentPhase: function () {
         for (var key of Object.keys(App.phase)) {
             $("." + App.phase[key]).hide();
@@ -171,7 +145,6 @@ App = {
 
         });
     },
-
     retryGame: function () {
         var bettingInstance;
         App.contracts.bet.deployed().then(function (instance) {
@@ -217,7 +190,7 @@ App = {
                 $(".looseAmount").text(App.balanceToPayUp);
                 $(".loosing").show();
             } else {
-                $(".winAmount").text(value);
+                $(".winAmount").text(App.numbers[value]);
                 $(".winning").show();
             }
             jQuery('#current_phase').text(App.currentPhase);
@@ -245,7 +218,6 @@ App = {
             App.displayCurrentPhase();
         });
     },
-
     withdrawAmount: function () {
         var bettingInstance;
         var pwd;
@@ -361,7 +333,7 @@ App = {
         max = Math.floor(8);
         App.generatedValue = Math.floor(Math.random() * (max - min + 1)) + min;
         console.log(App.generatedValue);
-        $(".playerSc").text(App.generatedValue);
+        $(".playerSc").text(App.numbers[App.generatedValue]);
         callback();
     },
     removeSelected: function () {
